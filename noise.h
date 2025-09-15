@@ -340,8 +340,11 @@ NOISE_API NOISE_INLINE float noise_simplex_2(float x, float y, float frequency)
 
   /* Calculate the contribution from the three corners */
   t0 = 0.5f - x0 * x0 - y0 * y0;
+
   if (t0 < 0.0f)
+  {
     n0 = 0.0f;
+  }
   else
   {
     t0 = t0 * t0;
@@ -349,8 +352,11 @@ NOISE_API NOISE_INLINE float noise_simplex_2(float x, float y, float frequency)
   }
 
   t1 = 0.5f - x1 * x1 - y1 * y1;
+
   if (t1 < 0.0f)
+  {
     n1 = 0.0f;
+  }
   else
   {
     t1 = t1 * t1;
@@ -358,8 +364,11 @@ NOISE_API NOISE_INLINE float noise_simplex_2(float x, float y, float frequency)
   }
 
   t2 = 0.5f - x2 * x2 - y2 * y2;
+
   if (t2 < 0.0f)
+  {
     n2 = 0.0f;
+  }
   else
   {
     t2 = t2 * t2;
@@ -503,8 +512,11 @@ NOISE_API NOISE_INLINE float noise_simplex_3(float x, float y, float z, float fr
 
   /* Calculate the contribution from the four corners */
   t0 = 0.6f - x0 * x0 - y0 * y0 - z0 * z0;
+
   if (t0 < 0.0f)
+  {
     n0 = 0.0f;
+  }
   else
   {
     t0 = t0 * t0;
@@ -512,8 +524,11 @@ NOISE_API NOISE_INLINE float noise_simplex_3(float x, float y, float z, float fr
   }
 
   t1 = 0.6f - x1 * x1 - y1 * y1 - z1 * z1;
+
   if (t1 < 0.0f)
+  {
     n1 = 0.0f;
+  }
   else
   {
     t1 = t1 * t1;
@@ -521,8 +536,11 @@ NOISE_API NOISE_INLINE float noise_simplex_3(float x, float y, float z, float fr
   }
 
   t2 = 0.6f - x2 * x2 - y2 * y2 - z2 * z2;
+
   if (t2 < 0.0f)
+  {
     n2 = 0.0f;
+  }
   else
   {
     t2 = t2 * t2;
@@ -530,8 +548,11 @@ NOISE_API NOISE_INLINE float noise_simplex_3(float x, float y, float z, float fr
   }
 
   t3 = 0.6f - x3 * x3 - y3 * y3 - z3 * z3;
+
   if (t3 < 0.0f)
+  {
     n3 = 0.0f;
+  }
   else
   {
     t3 = t3 * t3;

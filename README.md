@@ -33,6 +33,7 @@ For more information please look at the "noise.h" file or take a look at the "ex
 - **Minimal binary size** — optimized for small executables  
 - **Cross-platform** — Windows, Linux, MacOs 
 - **Strict compilation** — built with aggressive warnings & safety checks  
+- **Variouse Noise** - Perlin/Simplex 2D/3D/FBM support
 
 ## Quick Start
 

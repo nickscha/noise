@@ -209,7 +209,7 @@ float noise_value_2_terrain_stub(int x, int y)
   return e;
 }
 
-void noise_profile(void)
+void noise_test_profile(void)
 {
   int x, y;
 
@@ -266,7 +266,7 @@ int main(void)
   noise_test_run("value_2_terrain.ppm", noise_value_2_terrain_stub);
 
   /* Print collected performance profiling metrics */
-  noise_profile();
+  noise_test_profile();
   perf_print_stats();
 
   return 0;

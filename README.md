@@ -81,6 +81,35 @@ int main() {
 }
 ```
 
+## Benchmark Results
+
+The `noise_test.c` measures cpu cycle counts and time in milliseconds for the various functions.
+
+This is captured on a `Intel Core i7-7700HQ CPU @ 2.21 GHz` with a single core.
+
+```txt
+noise_test.c:115 [perf]
+noise_test.c:115 [perf] +-------------------------------------------------------+-------------------------------------------------------+
+noise_test.c:115 [perf] | cylces                                                | time_ms                                               |
+noise_test.c:115 [perf] +-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
+noise_test.c:115 [perf] |         min |         max |         avg |         sum |         min |         max |         avg |         sum |
+noise_test.c:115 [perf] +-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
+noise_test.c:115 [perf] |    11741035 |    11741035 |    11741035 |    11741035 |      4.1814 |      4.1814 |      4.1814 |      4.1814 |      1 x perlin_2.ppm
+noise_test.c:115 [perf] |    53299680 |    53299680 |    53299680 |    53299680 |     18.9822 |     18.9822 |     18.9822 |     18.9822 |      1 x perlin_2_fbm.ppm       
+noise_test.c:115 [perf] |   117596402 |   117596402 |   117596402 |   117596402 |     41.8799 |     41.8799 |     41.8799 |     41.8799 |      1 x perlin_2_fbm_rotation.ppm
+noise_test.c:115 [perf] |   230341326 |   230341326 |   230341326 |   230341326 |     82.0310 |     82.0310 |     82.0310 |     82.0310 |      1 x perlin_3_fbm_rotation.ppm
+noise_test.c:115 [perf] |    17768606 |    17768606 |    17768606 |    17768606 |      6.3285 |      6.3285 |      6.3285 |      6.3285 |      1 x simplex_2.ppm
+noise_test.c:115 [perf] |    89340119 |    89340119 |    89340119 |    89340119 |     31.8171 |     31.8171 |     31.8171 |     31.8171 |      1 x simplex_2_fbm.ppm      
+noise_test.c:115 [perf] |   257271266 |   257271266 |   257271266 |   257271266 |     91.6214 |     91.6214 |     91.6214 |     91.6214 |      1 x simplex_2_fbm_rotation.ppm
+noise_test.c:190 [perf] |         128 |      135551 |         153 |    40227709 |      0.0000 |      0.0483 |      0.0000 |     22.1109 | 262144 x perlin_2_fbm_4_octaves 
+noise_test.c:191 [perf] |         255 |      308460 |         298 |    78214731 |      0.0000 |      0.1098 |      0.0001 |     35.5935 | 262144 x perlin_2_fbm_8_octaves 
+noise_test.c:192 [perf] |         149 |      280512 |         175 |    46076511 |      0.0000 |      0.0999 |      0.0000 |     24.3790 | 262144 x perlin_2_fbm_rotation_4_octaves
+noise_test.c:193 [perf] |         305 |      127716 |         349 |    91679904 |      0.0000 |      0.0602 |      0.0001 |     40.5015 | 262144 x perlin_2_fbm_rotation_8_octaves
+noise_test.c:196 [perf] |         181 |       76377 |         311 |    81657088 |      0.0000 |      0.0986 |      0.0001 |     35.5992 | 262144 x simplex_2_fbm_4_octavesnoise_test.c:197 [perf] |         433 |       83098 |         662 |   173590384 |      0.0001 |      0.0296 |      0.0002 |     67.2793 | 262144 x simplex_2_fbm_8_octavesnoise_test.c:198 [perf] |         224 |      267478 |         375 |    98429722 |      0.0000 |      0.0952 |      0.0001 |     41.5800 | 262144 x simplex_2_fbm_rotation_4_octaves
+noise_test.c:199 [perf] |         512 |      328937 |         807 |   211555733 |      0.0001 |      0.1171 |      0.0003 |     81.4468 | 262144 x simplex_2_fbm_rotation_8_octaves
+noise_test.c:199 [perf] +-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+
+```
+
 ## Run Example: nostdlib, freestsanding
 
 In this repo you will find the "examples/noise_win32_nostdlib.c" with the corresponding "build.bat" file which

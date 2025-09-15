@@ -174,6 +174,33 @@ float noise_simplex_2_fbm_rotation_stub(int x, int y)
   return noise_simplex_2_fbm_rotation((float)x, (float)y, 0.010f, 9, 1.9f, 0.55f, m2);
 }
 
+void noise_profile(void)
+{
+  int x, y;
+
+  float m2[2][2] = {
+      {0.80f, -0.60f},
+      {0.60f, 0.80f}};
+
+  for (y = 0; y < HEIGHT; ++y)
+  {
+    for (x = 0; x < WIDTH; ++x)
+    {
+      /* Perlin Noise */
+      PERF_PROFILE_WITH_NAME({ float n = noise_perlin_2_fbm((float)x, (float)y, 0.010f, 4, 2.0f, 0.5f); (void) n; }, "perlin_2_fbm_4_octaves");
+      PERF_PROFILE_WITH_NAME({ float n = noise_perlin_2_fbm((float)x, (float)y, 0.010f, 8, 2.0f, 0.5f); (void) n; }, "perlin_2_fbm_8_octaves");
+      PERF_PROFILE_WITH_NAME({ float n = noise_perlin_2_fbm_rotation((float)x, (float)y, 0.010f, 4, 2.0f, 0.5f, m2); (void) n; }, "perlin_2_fbm_rotation_4_octaves");
+      PERF_PROFILE_WITH_NAME({ float n = noise_perlin_2_fbm_rotation((float)x, (float)y, 0.010f, 8, 2.0f, 0.5f, m2); (void) n; }, "perlin_2_fbm_rotation_8_octaves");
+
+      /* Simplex Noise */
+      PERF_PROFILE_WITH_NAME({ float n = noise_simplex_2_fbm((float)x, (float)y, 0.010f, 4, 2.0f, 0.5f); (void) n; }, "simplex_2_fbm_4_octaves");
+      PERF_PROFILE_WITH_NAME({ float n = noise_simplex_2_fbm((float)x, (float)y, 0.010f, 8, 2.0f, 0.5f); (void) n; }, "simplex_2_fbm_8_octaves");
+      PERF_PROFILE_WITH_NAME({ float n = noise_simplex_2_fbm_rotation((float)x, (float)y, 0.010f, 4, 2.0f, 0.5f, m2); (void) n; }, "simplex_2_fbm_rotation_4_octaves");
+      PERF_PROFILE_WITH_NAME({ float n = noise_simplex_2_fbm_rotation((float)x, (float)y, 0.010f, 8, 2.0f, 0.5f, m2); (void) n; }, "simplex_2_fbm_rotation_8_octaves");
+    }
+  }
+}
+
 int main(void)
 {
   /* Setup the PRNG seeding */
@@ -192,6 +219,7 @@ int main(void)
   noise_test_run("simplex_2_fbm_rotation.ppm", noise_simplex_2_fbm_rotation_stub);
 
   /* Print collected performance profiling metrics */
+  noise_profile();
   perf_print_stats();
 
   return 0;

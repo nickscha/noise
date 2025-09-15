@@ -10,12 +10,12 @@ LICENSE
   See end of file for detailed license information.
 
 */
-#include "../noise.h"     /* Noise Generation */
-#include "../deps/test.h" /* Simple Testing framework    */
+#include "../noise.h"                   /* Noise Generation */
+#include "../deps/test.h"               /* Simple Testing framework    */
+#define PERF_STATS_ENABLE               /* Collect profiling statistics */
+#define PERF_DISBALE_INTERMEDIATE_PRINT /* Disable printing each profile invocation */
+#include "../deps/perf.h"               /* Simple Performance profiler */
 
-#define PERF_STATS_ENABLE
-#define PERF_DISBALE_INTERMEDIATE_PRINT
-#include "../deps/perf.h" /* Simple Performance profiler */
 #include <stdio.h>
 
 /* Export PPM */

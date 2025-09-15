@@ -12,6 +12,9 @@ LICENSE
 */
 #include "../noise.h"     /* Noise Generation */
 #include "../deps/test.h" /* Simple Testing framework    */
+
+#define PERF_STATS_ENABLE
+#define PERF_DISBALE_INTERMEDIATE_PRINT
 #include "../deps/perf.h" /* Simple Performance profiler */
 #include <stdio.h>
 
@@ -105,10 +108,11 @@ void noise_normalize_heightmap(void)
 
 typedef float (*test_noise_function)(int x, int y);
 
-void noise_test_run(char *filname, test_noise_function function)
+void noise_test_run(char *filename, test_noise_function function)
 {
   int x, y;
 
+  PERF_PROFILE_WITH_NAME({
   for (y = 0; y < HEIGHT; ++y)
   {
     for (x = 0; x < WIDTH; ++x)
@@ -116,10 +120,10 @@ void noise_test_run(char *filname, test_noise_function function)
       float n = function(x, y);
       heightmap[y * WIDTH + x] = n;
     }
-  }
+  } }, filename);
 
   noise_normalize_heightmap();
-  noise_export_ppm(filname, heightmap, WIDTH, HEIGHT);
+  noise_export_ppm(filename, heightmap, WIDTH, HEIGHT);
 }
 
 float noise_perlin_2_stub(int x, int y)
@@ -151,14 +155,44 @@ float noise_perlin_3_fbm_rotation_stub(int x, int y)
   return noise_perlin_3_fbm_rotation((float)x, (float)y, 0.0f, 0.010f, 9, 1.9f, 0.55f, m3);
 }
 
+float noise_simplex_2_stub(int x, int y)
+{
+  return noise_simplex_2((float)x, (float)y, 0.010f);
+}
+
+float noise_simplex_2_fbm_stub(int x, int y)
+{
+  return noise_simplex_2_fbm((float)x, (float)y, 0.010f, 4, 2.0f, 0.5f);
+}
+
+float noise_simplex_2_fbm_rotation_stub(int x, int y)
+{
+  float m2[2][2] = {
+      {0.80f, -0.60f},
+      {0.60f, 0.80f}};
+
+  return noise_simplex_2_fbm_rotation((float)x, (float)y, 0.010f, 9, 1.9f, 0.55f, m2);
+}
+
 int main(void)
 {
+  /* Setup the PRNG seeding */
   noise_lcg_state = 1337;
-  noise_perlin_seed(1337);
+  noise_seed(1337);
+
+  /* Perlin Noise */
   noise_test_run("perlin_2.ppm", noise_perlin_2_stub);
   noise_test_run("perlin_2_fbm.ppm", noise_perlin_2_fbm_stub);
   noise_test_run("perlin_2_fbm_rotation.ppm", noise_perlin_2_fbm_rotation_stub);
   noise_test_run("perlin_3_fbm_rotation.ppm", noise_perlin_3_fbm_rotation_stub);
+
+  /* Simplex Noise */
+  noise_test_run("simplex_2.ppm", noise_simplex_2_stub);
+  noise_test_run("simplex_2_fbm.ppm", noise_simplex_2_fbm_stub);
+  noise_test_run("simplex_2_fbm_rotation.ppm", noise_simplex_2_fbm_rotation_stub);
+
+  /* Print collected performance profiling metrics */
+  perf_print_stats();
 
   return 0;
 }

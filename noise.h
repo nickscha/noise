@@ -35,7 +35,7 @@ LICENSE
 #define NOISE_DOT_3(g, x, y, z) ((g)[0] * (x) + (g)[1] * (y) + (g)[2] * (z))
 
 static unsigned char noise_permutations[512];
-static int noise_perlin_initialized = 0;
+static int noise_initialized = 0;
 static unsigned int noise_lcg_state;
 static float noise_gradient_2_lut[8][2] = {{1, 1}, {-1, 1}, {1, -1}, {-1, -1}, {1, 0}, {-1, 0}, {0, 1}, {0, -1}};
 static float noise_gradient_3_lut[16][3] = {{1, 1, 0}, {-1, 1, 0}, {1, -1, 0}, {-1, -1, 0}, {1, 0, 1}, {-1, 0, 1}, {1, 0, -1}, {-1, 0, -1}, {0, 1, 1}, {0, -1, 1}, {0, 1, -1}, {0, -1, -1}, {1, 1, 0}, {-1, 1, 0}, {0, -1, 1}, {0, -1, -1}};
@@ -66,11 +66,7 @@ NOISE_API NOISE_INLINE unsigned noise_lcg_next(void)
   return noise_lcg_state;
 }
 
-/* #############################################################################
- * # Perlin Noise functions
- * #############################################################################
- */
-NOISE_API NOISE_INLINE void noise_perlin_seed(unsigned int seed)
+NOISE_API NOISE_INLINE void noise_seed(unsigned int seed)
 {
   int i;
   noise_lcg_state = seed;
@@ -91,17 +87,21 @@ NOISE_API NOISE_INLINE void noise_perlin_seed(unsigned int seed)
     noise_permutations[256 + i] = noise_permutations[i];
   }
 
-  noise_perlin_initialized = 1;
+  noise_initialized = 1;
 }
 
+/* #############################################################################
+ * # Perlin Noise functions
+ * #############################################################################
+ */
 NOISE_API NOISE_INLINE float noise_perlin_2(float x, float y, float frequency)
 {
   int X, Y, aa, ab, ba, bb;
   float xf, yf, u, v, x1, x2, y1;
 
-  if (!noise_perlin_initialized)
+  if (!noise_initialized)
   {
-    noise_perlin_seed(0xDEADBEEFu);
+    noise_seed(0xDEADBEEFu);
   }
 
   x *= frequency;
@@ -136,9 +136,9 @@ NOISE_API NOISE_INLINE float noise_perlin_3(float x, float y, float z, float fre
   int X, Y, Z, aaa, aba, aab, abb, baa, bba, bab, bbb;
   float xf, yf, zf, u, v, w, x1, x2, y1, y2;
 
-  if (!noise_perlin_initialized)
+  if (!noise_initialized)
   {
-    noise_perlin_seed(0xDEADBEEFu);
+    noise_seed(0xDEADBEEFu);
   }
 
   x *= freq;
@@ -261,6 +261,386 @@ NOISE_API NOISE_INLINE float noise_perlin_3_fbm_rotation(float x, float y, float
     norm += amp;
 
     /* rotate then scale */
+    noise_m3x3_mul(rotation, p, tmp);
+    p[0] = tmp[0] * lacunarity;
+    p[1] = tmp[1] * lacunarity;
+    p[2] = tmp[2] * lacunarity;
+
+    amp *= gain;
+  }
+
+  return sum / norm;
+}
+
+/* #############################################################################
+ * # Simplex Noise functions
+ * #############################################################################
+ */
+#define NOISE_SIMPLEX_F2 0.366025403f /* (sqrt(3)-1)/2 */
+#define NOISE_SIMPLEX_G2 0.211324865f /* (3-sqrt(3))/6 */
+#define NOISE_SIMPLEX_F3 (1.0f / 3.0f)
+#define NOISE_SIMPLEX_G3 (1.0f / 6.0f)
+
+NOISE_API NOISE_INLINE float noise_simplex_2(float x, float y, float frequency)
+{
+  int i, j, gi0, gi1, gi2;
+  float n0, n1, n2; /* noise contributions from the three corners */
+  float s, t, xs, ys, x0, y0, x1, y1, x2, y2, t0, t1, t2;
+  int ii, jj;
+  int i1, j1;
+  int idx;
+
+  if (!noise_initialized)
+  {
+    noise_seed(0xDEADBEEFu);
+  }
+
+  x *= frequency;
+  y *= frequency;
+
+  /* Skew the input space to determine which simplex cell we're in */
+  s = (x + y) * NOISE_SIMPLEX_F2;
+  xs = x + s;
+  ys = y + s;
+  i = (int)NOISE_FLOOR(xs);
+  j = (int)NOISE_FLOOR(ys);
+
+  t = (float)(i + j) * NOISE_SIMPLEX_G2;
+  x0 = x - (float)i + t; /* unskew the cell origin back to (x,y) space */
+  y0 = y - (float)j + t;
+
+  if (x0 > y0)
+  {
+    i1 = 1;
+    j1 = 0;
+  }
+  else
+  {
+    i1 = 0;
+    j1 = 1;
+  }
+
+  /* Offsets for the other corners */
+  x1 = x0 - (float)i1 + NOISE_SIMPLEX_G2;
+  y1 = y0 - (float)j1 + NOISE_SIMPLEX_G2;
+  x2 = x0 - 1.0f + 2.0f * NOISE_SIMPLEX_G2;
+  y2 = y0 - 1.0f + 2.0f * NOISE_SIMPLEX_G2;
+
+  /* Work out the hashed gradient indices of the three simplex corners */
+  ii = i & 255;
+  jj = j & 255;
+
+  /* Using permutation table to pick gradients */
+  idx = (int)noise_permutations[ii + noise_permutations[jj]];
+  gi0 = idx & 7; /* use 8 2D gradients */
+  idx = (int)noise_permutations[ii + i1 + noise_permutations[jj + j1]];
+  gi1 = idx & 7;
+  idx = (int)noise_permutations[ii + 1 + noise_permutations[jj + 1]];
+  gi2 = idx & 7;
+
+  /* Calculate the contribution from the three corners */
+  t0 = 0.5f - x0 * x0 - y0 * y0;
+  if (t0 < 0.0f)
+    n0 = 0.0f;
+  else
+  {
+    t0 = t0 * t0;
+    n0 = t0 * t0 * NOISE_DOT_2(noise_gradient_2_lut[gi0], x0, y0);
+  }
+
+  t1 = 0.5f - x1 * x1 - y1 * y1;
+  if (t1 < 0.0f)
+    n1 = 0.0f;
+  else
+  {
+    t1 = t1 * t1;
+    n1 = t1 * t1 * NOISE_DOT_2(noise_gradient_2_lut[gi1], x1, y1);
+  }
+
+  t2 = 0.5f - x2 * x2 - y2 * y2;
+  if (t2 < 0.0f)
+    n2 = 0.0f;
+  else
+  {
+    t2 = t2 * t2;
+    n2 = t2 * t2 * NOISE_DOT_2(noise_gradient_2_lut[gi2], x2, y2);
+  }
+
+  /* Add contributions and scale the result to cover approx [-1,1] */
+  return 70.0f * (n0 + n1 + n2);
+}
+
+NOISE_API NOISE_INLINE float noise_simplex_3(float x, float y, float z, float frequency)
+{
+  float n0, n1, n2, n3;
+  float s, t;
+  float xs, ys, zs;
+  int i, j, k;
+  float x0, y0, z0;
+  int i1, j1, k1;
+  int i2, j2, k2;
+  float x1, y1, z1, x2, y2, z2, x3, y3, z3;
+  float t0, t1, t2, t3;
+  int ii, jj, kk;
+  int gi0, gi1, gi2, gi3;
+  int idx;
+
+  if (!noise_initialized)
+  {
+    noise_seed(0xDEADBEEFu);
+  }
+
+  x *= frequency;
+  y *= frequency;
+  z *= frequency;
+
+  /* Skew the input space to determine which simplex cell we're in */
+  s = (x + y + z) * NOISE_SIMPLEX_F3;
+  xs = x + s;
+  ys = y + s;
+  zs = z + s;
+  i = (int)NOISE_FLOOR(xs);
+  j = (int)NOISE_FLOOR(ys);
+  k = (int)NOISE_FLOOR(zs);
+
+  t = (float)(i + j + k) * NOISE_SIMPLEX_G3;
+  x0 = x - (float)i + t;
+  y0 = y - (float)j + t;
+  z0 = z - (float)k + t;
+
+  /* Rank x0, y0, z0 to find simplex corner offsets */
+  if (x0 >= y0)
+  {
+    if (y0 >= z0)
+    {
+      /* X Y Z order */
+      i1 = 1;
+      j1 = 0;
+      k1 = 0;
+      i2 = 1;
+      j2 = 1;
+      k2 = 0;
+    }
+    else if (x0 >= z0)
+    {
+      /* X Z Y order */
+      i1 = 1;
+      j1 = 0;
+      k1 = 0;
+      i2 = 1;
+      j2 = 0;
+      k2 = 1;
+    }
+    else
+    {
+      /* Z X Y order */
+      i1 = 0;
+      j1 = 0;
+      k1 = 1;
+      i2 = 1;
+      j2 = 0;
+      k2 = 1;
+    }
+  }
+  else
+  { /* x0 < y0 */
+    if (y0 < z0)
+    {
+      /* Z Y X order */
+      i1 = 0;
+      j1 = 0;
+      k1 = 1;
+      i2 = 0;
+      j2 = 1;
+      k2 = 1;
+    }
+    else if (x0 < z0)
+    {
+      /* Y Z X order */
+      i1 = 0;
+      j1 = 1;
+      k1 = 0;
+      i2 = 0;
+      j2 = 1;
+      k2 = 1;
+    }
+    else
+    {
+      /* Y X Z order */
+      i1 = 0;
+      j1 = 1;
+      k1 = 0;
+      i2 = 1;
+      j2 = 1;
+      k2 = 0;
+    }
+  }
+
+  /* Offsets for corners */
+  x1 = x0 - (float)i1 + NOISE_SIMPLEX_G3;
+  y1 = y0 - (float)j1 + NOISE_SIMPLEX_G3;
+  z1 = z0 - (float)k1 + NOISE_SIMPLEX_G3;
+  x2 = x0 - (float)i2 + 2.0f * NOISE_SIMPLEX_G3;
+  y2 = y0 - (float)j2 + 2.0f * NOISE_SIMPLEX_G3;
+  z2 = z0 - (float)k2 + 2.0f * NOISE_SIMPLEX_G3;
+  x3 = x0 - 1.0f + 3.0f * NOISE_SIMPLEX_G3;
+  y3 = y0 - 1.0f + 3.0f * NOISE_SIMPLEX_G3;
+  z3 = z0 - 1.0f + 3.0f * NOISE_SIMPLEX_G3;
+
+  /* Work out hashed gradient indices of the four simplex corners */
+  ii = i & 255;
+  jj = j & 255;
+  kk = k & 255;
+
+  idx = (int)noise_permutations[ii + noise_permutations[jj + noise_permutations[kk]]];
+  gi0 = idx & 15; /* use 16 3D gradients */
+  idx = (int)noise_permutations[ii + i1 + noise_permutations[jj + j1 + noise_permutations[kk + k1]]];
+  gi1 = idx & 15;
+  idx = (int)noise_permutations[ii + i2 + noise_permutations[jj + j2 + noise_permutations[kk + k2]]];
+  gi2 = idx & 15;
+  idx = (int)noise_permutations[ii + 1 + noise_permutations[jj + 1 + noise_permutations[kk + 1]]];
+  gi3 = idx & 15;
+
+  /* Calculate the contribution from the four corners */
+  t0 = 0.6f - x0 * x0 - y0 * y0 - z0 * z0;
+  if (t0 < 0.0f)
+    n0 = 0.0f;
+  else
+  {
+    t0 = t0 * t0;
+    n0 = t0 * t0 * NOISE_DOT_3(noise_gradient_3_lut[gi0], x0, y0, z0);
+  }
+
+  t1 = 0.6f - x1 * x1 - y1 * y1 - z1 * z1;
+  if (t1 < 0.0f)
+    n1 = 0.0f;
+  else
+  {
+    t1 = t1 * t1;
+    n1 = t1 * t1 * NOISE_DOT_3(noise_gradient_3_lut[gi1], x1, y1, z1);
+  }
+
+  t2 = 0.6f - x2 * x2 - y2 * y2 - z2 * z2;
+  if (t2 < 0.0f)
+    n2 = 0.0f;
+  else
+  {
+    t2 = t2 * t2;
+    n2 = t2 * t2 * NOISE_DOT_3(noise_gradient_3_lut[gi2], x2, y2, z2);
+  }
+
+  t3 = 0.6f - x3 * x3 - y3 * y3 - z3 * z3;
+  if (t3 < 0.0f)
+    n3 = 0.0f;
+  else
+  {
+    t3 = t3 * t3;
+    n3 = t3 * t3 * NOISE_DOT_3(noise_gradient_3_lut[gi3], x3, y3, z3);
+  }
+
+  /* Sum up and scale to cover the range roughly [-1,1] */
+  return 32.0f * (n0 + n1 + n2 + n3);
+}
+
+NOISE_API NOISE_INLINE float noise_simplex_2_fbm(float x, float y, float frequency, int octaves, float lacunarity, float gain)
+{
+  int i;
+  float sum = 0.0f;
+  float amp = 1.0f;
+  float f = frequency;
+  float norm = 0.0f;
+
+  for (i = 0; i < octaves; ++i)
+  {
+    sum += amp * noise_simplex_2(x, y, f);
+    norm += amp;
+    f *= lacunarity;
+    amp *= gain;
+  }
+
+  return sum / norm;
+}
+
+NOISE_API NOISE_INLINE float noise_simplex_3_fbm(float x, float y, float z, float frequency, int octaves, float lacunarity, float gain)
+{
+  int i;
+  float sum = 0.0f;
+  float amp = 1.0f;
+  float f = frequency;
+  float norm = 0.0f;
+
+  for (i = 0; i < octaves; ++i)
+  {
+    sum += amp * noise_simplex_3(x, y, z, f);
+    norm += amp;
+    f *= lacunarity;
+    amp *= gain;
+  }
+
+  return sum / norm;
+}
+
+NOISE_API NOISE_INLINE float noise_simplex_2_fbm_rotation(
+    float x, float y,
+    float frequency,
+    int octaves,
+    float lacunarity,
+    float gain,
+    float rotation[2][2])
+{
+  int i;
+  float sum = 0.0f;
+  float amp = 1.0f;
+  float norm = 0.0f;
+  float p[2];
+  float tmp[2];
+
+  p[0] = x * frequency;
+  p[1] = y * frequency;
+
+  for (i = 0; i < octaves; ++i)
+  {
+    /* sample noise */
+    sum += amp * noise_simplex_2(p[0], p[1], 1.0f);
+    norm += amp;
+
+    /* rotate and scale */
+    noise_m2x2_mul(rotation, p, tmp);
+    p[0] = tmp[0] * lacunarity;
+    p[1] = tmp[1] * lacunarity;
+
+    amp *= gain;
+  }
+
+  return sum / norm;
+}
+
+NOISE_API NOISE_INLINE float noise_simplex_3_fbm_rotation(
+    float x, float y, float z,
+    float frequency,
+    int octaves,
+    float lacunarity,
+    float gain,
+    float rotation[3][3])
+{
+  int i;
+  float sum = 0.0f;
+  float amp = 1.0f;
+  float norm = 0.0f;
+  float p[3];
+  float tmp[3];
+
+  p[0] = x * frequency;
+  p[1] = y * frequency;
+  p[2] = z * frequency;
+
+  for (i = 0; i < octaves; ++i)
+  {
+    /* sample noise */
+    sum += amp * noise_simplex_3(p[0], p[1], p[2], 1.0f);
+    norm += amp;
+
+    /* rotate and scale */
     noise_m3x3_mul(rotation, p, tmp);
     p[0] = tmp[0] * lacunarity;
     p[1] = tmp[1] * lacunarity;

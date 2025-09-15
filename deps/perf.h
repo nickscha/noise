@@ -1,4 +1,4 @@
-/* perf.h - v0.4 - public domain data structures - nickscha 2025
+/* perf.h - v0.5 - public domain data structures - nickscha 2025
 
 A C89 standard compliant, single header, nostdlib (no C Standard Library) simple performance profiler.
 
@@ -76,10 +76,14 @@ typedef union LARGE_INTEGER
 
 #define PERF_WIN32_API(r) __declspec(dllimport) r __stdcall
 
-__declspec(dllimport) int __stdcall QueryPerformanceFrequency(LARGE_INTEGER *lpFrequency);
-__declspec(dllimport) int __stdcall QueryPerformanceCounter(LARGE_INTEGER *lpPerformanceCount);
-__declspec(dllimport) void *__stdcall GetStdHandle(unsigned long nStdHandle);
-__declspec(dllimport) int __stdcall WriteConsoleA(void *hConsoleOutput, void *lpBuffer, unsigned long nNumberOfCharsToWrite, unsigned long *lpNumberOfCharsWritten, void *lpReserved);
+PERF_WIN32_API(int)
+QueryPerformanceFrequency(LARGE_INTEGER *lpFrequency);
+PERF_WIN32_API(int)
+QueryPerformanceCounter(LARGE_INTEGER *lpPerformanceCount);
+PERF_WIN32_API(void *)
+GetStdHandle(unsigned long nStdHandle);
+PERF_WIN32_API(int)
+WriteConsoleA(void *hConsoleOutput, void *lpBuffer, unsigned long nNumberOfCharsToWrite, unsigned long *lpNumberOfCharsWritten, void *lpReserved);
 
 #endif /* _WINDOWS_ (windows.h) */
 

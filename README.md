@@ -43,10 +43,14 @@ int main() {
           {0.60f, 0.80f}
     };
 
-    /* Set a perlin noise and pseudo random number generator seed */
-    noise_perlin_seed(42); 
+    /* Set a noise and pseudo random number generator seed */
+    noise_seed(42); 
     noise_lcg_state = 21;
-    
+
+    /* #############################################################################
+    * # Perlin Noise functions
+    * #############################################################################
+    */
     /* 2D perlin noise (x, y, frequency) */
     noise_value = noise_perlin_2(1.0f, 2.0f, 0.010f);
 
@@ -60,6 +64,18 @@ int main() {
     noise_value = noise_perlin_3(1.0f, 2.0f, -5.0f, 0.010f);
 
     /* All 2D / 3D functions follow the same naming scheme */
+
+    /* #############################################################################
+    * # Simplex Noise functions
+    * #############################################################################
+    */
+    /* 2D simplex noise (x, y, frequency) */
+    noise_value = noise_simplex_2(1.0f, 2.0f, 0.010f);
+
+    /* 2D fractal simplex noise octaves with no rotation (x, y, frequency, octaves, lacunarity, gain)*/
+    noise_value = noise_simplex_2_fbm(1.0f, 2.0f, 0.010f, 4, 2.0f, 0.5f);
+
+    /* ... */
 
     return 0;
 }

@@ -60,6 +60,25 @@ NOISE_API NOISE_INLINE void noise_m3x3_mul(float m[3][3], float v[3], float out[
   out[2] = m[2][0] * v[0] + m[2][1] * v[1] + m[2][2] * v[2];
 }
 
+NOISE_API NOISE_INLINE float noise_smoothstep(float a, float b, float x)
+{
+  float t;
+
+  if (x <= a)
+  {
+    return 0.0f;
+  }
+
+  if (x >= b)
+  {
+    return 1.0f;
+  }
+
+  t = (x - a) / (b - a);
+
+  return t * t * (3.0f - 2.0f * t);
+}
+
 NOISE_API NOISE_INLINE unsigned noise_lcg_next(void)
 {
   noise_lcg_state = noise_lcg_state * 1664525u + 1013904223u;

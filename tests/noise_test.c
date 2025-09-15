@@ -174,6 +174,41 @@ float noise_simplex_2_fbm_rotation_stub(int x, int y)
   return noise_simplex_2_fbm_rotation((float)x, (float)y, 0.010f, 9, 1.9f, 0.55f, m2);
 }
 
+float noise_value_2_stub(int x, int y)
+{
+  return noise_value_2((float)x, (float)y, 0.010f);
+}
+
+float noise_value_2_fbm_stub(int x, int y)
+{
+  return noise_value_2_fbm((float)x, (float)y, 0.010f, 4, 2.0f, 0.5f);
+}
+
+float noise_value_2_fbm_rotation_stub(int x, int y)
+{
+  float m2[2][2] = {
+      {0.80f, -0.60f},
+      {0.60f, 0.80f}};
+
+  return noise_value_2_fbm_rotation((float)x, (float)y, 0.010f, 9, 1.9f, 0.55f, m2);
+}
+
+float noise_value_2_terrain_stub(int x, int y)
+{
+  float m2[2][2] = {
+      {0.80f, -0.60f},
+      {0.60f, 0.80f}};
+
+  float e = noise_value_2_fbm_rotation((float)x / 2000.0f + 1.0f, (float)y / 2000.0f - 2.0f, 1.0f, 9, 1.9f, 0.55f, m2);
+
+  e = 600.0f * e + 600.0f;
+
+  /* cliffs */
+  e += 90.0f * noise_smoothstep(552.0f, 594.0f, e);
+
+  return e;
+}
+
 void noise_profile(void)
 {
   int x, y;
@@ -197,6 +232,12 @@ void noise_profile(void)
       PERF_PROFILE_WITH_NAME({ float n = noise_simplex_2_fbm((float)x, (float)y, 0.010f, 8, 2.0f, 0.5f); (void) n; }, "simplex_2_fbm_8_octaves");
       PERF_PROFILE_WITH_NAME({ float n = noise_simplex_2_fbm_rotation((float)x, (float)y, 0.010f, 4, 2.0f, 0.5f, m2); (void) n; }, "simplex_2_fbm_rotation_4_octaves");
       PERF_PROFILE_WITH_NAME({ float n = noise_simplex_2_fbm_rotation((float)x, (float)y, 0.010f, 8, 2.0f, 0.5f, m2); (void) n; }, "simplex_2_fbm_rotation_8_octaves");
+
+      /* Value Noise */
+      PERF_PROFILE_WITH_NAME({ float n = noise_value_2_fbm((float)x, (float)y, 0.010f, 4, 2.0f, 0.5f); (void) n; }, "value_2_fbm_4_octaves");
+      PERF_PROFILE_WITH_NAME({ float n = noise_value_2_fbm((float)x, (float)y, 0.010f, 8, 2.0f, 0.5f); (void) n; }, "value_2_fbm_8_octaves");
+      PERF_PROFILE_WITH_NAME({ float n = noise_value_2_fbm_rotation((float)x, (float)y, 0.010f, 4, 2.0f, 0.5f, m2); (void) n; }, "value_2_fbm_rotation_4_octaves");
+      PERF_PROFILE_WITH_NAME({ float n = noise_value_2_fbm_rotation((float)x, (float)y, 0.010f, 8, 2.0f, 0.5f, m2); (void) n; }, "value_2_fbm_rotation_8_octaves");
     }
   }
 }
@@ -217,6 +258,12 @@ int main(void)
   noise_test_run("simplex_2.ppm", noise_simplex_2_stub);
   noise_test_run("simplex_2_fbm.ppm", noise_simplex_2_fbm_stub);
   noise_test_run("simplex_2_fbm_rotation.ppm", noise_simplex_2_fbm_rotation_stub);
+
+  /* Value Noise */
+  noise_test_run("value_2.ppm", noise_value_2_stub);
+  noise_test_run("value_2_fbm.ppm", noise_value_2_fbm_stub);
+  noise_test_run("value_2_fbm_rotation.ppm", noise_value_2_fbm_rotation_stub);
+  noise_test_run("value_2_terrain.ppm", noise_value_2_terrain_stub);
 
   /* Print collected performance profiling metrics */
   noise_profile();

@@ -79,6 +79,23 @@ NOISE_API NOISE_INLINE float noise_smoothstep(float a, float b, float x)
   return t * t * (3.0f - 2.0f * t);
 }
 
+NOISE_API NOISE_INLINE float noise_floor(float x)
+{
+  int i = (int)x;
+  return (x < 0.0f && (float)i != x) ? (float)(i - 1) : (float)i;
+}
+
+NOISE_API NOISE_INLINE float noise_fract(float x)
+{
+  return x - noise_floor(x);
+}
+
+NOISE_API NOISE_INLINE float noise_hash(float n)
+{
+  float f = noise_fract(n * 0.3183099f);
+  return noise_fract(n * 17.0f * f);
+}
+
 NOISE_API NOISE_INLINE unsigned noise_lcg_next(void)
 {
   noise_lcg_state = noise_lcg_state * 1664525u + 1013904223u;
@@ -685,6 +702,94 @@ NOISE_API NOISE_INLINE float noise_simplex_3_fbm_rotation(
     p[0] = tmp[0] * lacunarity;
     p[1] = tmp[1] * lacunarity;
     p[2] = tmp[2] * lacunarity;
+
+    amp *= gain;
+  }
+
+  return sum / norm;
+}
+
+/* #############################################################################
+ * # Value Noise functions
+ * #############################################################################
+ */
+NOISE_API NOISE_INLINE float noise_value_2(float x, float y, float frequency)
+{
+  float px, py; /* integer lattice point */
+  float wx, wy; /* fractional part */
+  float ux, uy; /* fade curve */
+  float a, b, c, d;
+  float k0, k1, k2, k4;
+
+  /* scale input by frequency */
+  x *= frequency;
+  y *= frequency;
+
+  px = noise_floor(x);
+  py = noise_floor(y);
+
+  wx = noise_fract(x);
+  wy = noise_fract(y);
+
+  /* fade curve */
+  ux = wx * wx * wx * (wx * (wx * 6.0f - 15.0f) + 10.0f);
+  uy = wy * wy * wy * (wy * (wy * 6.0f - 15.0f) + 10.0f);
+
+  a = noise_hash(px + 317.0f * py + 0.0f);
+  b = noise_hash(px + 317.0f * py + 1.0f);
+  c = noise_hash(px + 317.0f * (py + 1.0f) + 0.0f);
+  d = noise_hash(px + 317.0f * (py + 1.0f) + 1.0f);
+
+  k0 = a;
+  k1 = b - a;
+  k2 = c - a;
+  k4 = a - b - c + d;
+
+  return -1.0f + 2.0f * (k0 + k1 * ux + k2 * uy + k4 * ux * uy);
+}
+
+NOISE_API NOISE_INLINE float noise_value_2_fbm(float x, float y, float frequency, int octaves, float lacunarity, float gain)
+{
+  int i;
+  float sum = 0.0f;
+  float amp = 1.0f;
+  float f = frequency;
+  float norm = 0.0f;
+
+  for (i = 0; i < octaves; ++i)
+  {
+    sum += amp * noise_value_2(x, y, f);
+    norm += amp;
+
+    f *= lacunarity;
+    amp *= gain;
+  }
+
+  return sum / norm;
+}
+
+NOISE_API NOISE_INLINE float noise_value_2_fbm_rotation(float x, float y, float frequency, int octaves, float lacunarity, float gain, float rotation[2][2])
+{
+  int i;
+  float sum = 0.0f;
+  float amp = 1.0f;
+  float norm = 0.0f;
+  float p[2], tmp[2];
+
+  /* initial point scaled by frequency */
+  p[0] = x * frequency;
+  p[1] = y * frequency;
+
+  for (i = 0; i < octaves; ++i)
+  {
+    /* sample value noise at frequency 1.0 */
+    sum += amp * noise_value_2(p[0], p[1], 1.0f);
+    norm += amp;
+
+    /* rotate and scale for next octave */
+    noise_m2x2_mul(rotation, p, tmp);
+    p[0] = tmp[0] * lacunarity;
+    p[1] = tmp[1] * lacunarity;
 
     amp *= gain;
   }

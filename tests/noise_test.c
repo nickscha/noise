@@ -12,6 +12,7 @@ LICENSE
 */
 #include "../noise.h"                   /* Noise Generation */
 #include "../deps/test.h"               /* Simple Testing framework    */
+#define PERF_DISABLE
 #define PERF_STATS_ENABLE               /* Collect profiling statistics */
 #define PERF_DISBALE_INTERMEDIATE_PRINT /* Disable printing each profile invocation */
 #include "../deps/perf.h"               /* Simple Performance profiler */

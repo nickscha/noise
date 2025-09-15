@@ -17,21 +17,43 @@ LICENSE
 #include "../deps/perf.h"               /* Simple Performance profiler */
 
 #include <stdio.h>
+#include <stdlib.h>
 
-/* Export PPM */
-void noise_export_ppm(const char *filename, float *data, int width, int height)
+#define WIDTH 512
+#define HEIGHT 512
+static float heightmap[WIDTH * HEIGHT];
+
+unsigned int img_size = (unsigned int)(WIDTH * HEIGHT * 3);
+unsigned char *img;
+
+static void noise_export_ppm(char *filename, float *data, int width, int height)
 {
-  int i, j;
-
   FILE *f = fopen(filename, "wb");
+  int j, i;
+
+  unsigned char *p;
+
+  if (!img)
+  {
+    img = (unsigned char *)malloc(img_size);
+  }
 
   if (!f)
   {
-    fprintf(stderr, "Failed to open file\n");
+    fprintf(stderr, "Failed to open file %s\n", filename);
     return;
   }
 
   fprintf(f, "P6\n%d %d\n255\n", width, height);
+
+  if (!img)
+  {
+    fprintf(stderr, "Failed to allocate image buffer\n");
+    fclose(f);
+    return;
+  }
+
+  p = img;
 
   for (j = 0; j < height; ++j)
   {
@@ -40,33 +62,32 @@ void noise_export_ppm(const char *filename, float *data, int width, int height)
       float v = data[j * width + i];
       unsigned char c;
 
-      if (v < 0)
+      /* clamp to [0,1] */
+      if (v < 0.0f)
       {
-        v = 0;
+        v = 0.0f;
+      }
+      if (v > 1.0f)
+      {
+        v = 1.0f;
       }
 
-      if (v > 1)
-      {
-        v = 1;
-      }
+      c = (unsigned char)(v * 255.0f);
 
-      c = (unsigned char)(v * 255);
-
-      fputc(c, f);
-      fputc(c, f);
-      fputc(c, f);
+      /* grayscale: R = G = B = c */
+      *p++ = c;
+      *p++ = c;
+      *p++ = c;
     }
   }
+
+  fwrite(img, 1, img_size, f);
   fclose(f);
 
   printf("[noise] %s exported.\n", filename);
 }
 
-#define WIDTH 512
-#define HEIGHT 512
-float heightmap[WIDTH * HEIGHT];
-
-void noise_normalize_heightmap(void)
+static void noise_normalize_heightmap(void)
 {
   int x, y;
   float min = heightmap[0], max = heightmap[0];
@@ -268,6 +289,11 @@ int main(void)
   /* Print collected performance profiling metrics */
   noise_test_profile();
   perf_print_stats();
+
+  if (img)
+  {
+    free(img);
+  }
 
   return 0;
 }

@@ -35,7 +35,6 @@ LICENSE
 #define NOISE_DOT_3(g, x, y, z) ((g)[0] * (x) + (g)[1] * (y) + (g)[2] * (z))
 
 static unsigned char noise_permutations[512];
-static int noise_initialized = 0;
 static unsigned int noise_lcg_state;
 static float noise_gradient_2_lut[8][2] = {{1, 1}, {-1, 1}, {1, -1}, {-1, -1}, {1, 0}, {-1, 0}, {0, 1}, {0, -1}};
 static float noise_gradient_3_lut[16][3] = {{1, 1, 0}, {-1, 1, 0}, {1, -1, 0}, {-1, -1, 0}, {1, 0, 1}, {-1, 0, 1}, {1, 0, -1}, {-1, 0, -1}, {0, 1, 1}, {0, -1, 1}, {0, 1, -1}, {0, -1, -1}, {1, 1, 0}, {-1, 1, 0}, {0, -1, 1}, {0, -1, -1}};
@@ -122,8 +121,6 @@ NOISE_API NOISE_INLINE void noise_seed(unsigned int seed)
   {
     noise_permutations[256 + i] = noise_permutations[i];
   }
-
-  noise_initialized = 1;
 }
 
 /* #############################################################################
@@ -134,11 +131,6 @@ NOISE_API NOISE_INLINE float noise_perlin_2(float x, float y, float frequency)
 {
   int X, Y, aa, ab, ba, bb;
   float xf, yf, u, v, x1, x2, y1;
-
-  if (!noise_initialized)
-  {
-    noise_seed(0xDEADBEEFu);
-  }
 
   x *= frequency;
   y *= frequency;
@@ -160,18 +152,13 @@ NOISE_API NOISE_INLINE float noise_perlin_2(float x, float y, float frequency)
                   NOISE_DOT_2(noise_gradient_2_lut[bb & 7], xf - 1, yf - 1), u);
   y1 = NOISE_LERP(x1, x2, v);
 
-  return y1 * 0.7071f; /* normalize -1 to 1 */
+   return y1 * 0.70710678f; /* normalize -1 to 1 */
 }
 
 NOISE_API NOISE_INLINE float noise_perlin_3(float x, float y, float z, float freq)
 {
   int X, Y, Z, aaa, aba, aab, abb, baa, bba, bab, bbb;
   float xf, yf, zf, u, v, w, x1, x2, y1, y2;
-
-  if (!noise_initialized)
-  {
-    noise_seed(0xDEADBEEFu);
-  }
 
   x *= freq;
   y *= freq;
@@ -207,7 +194,7 @@ NOISE_API NOISE_INLINE float noise_perlin_3(float x, float y, float z, float fre
                   NOISE_DOT_3(noise_gradient_3_lut[bbb & 15], xf - 1, yf - 1, zf - 1), u);
   y2 = NOISE_LERP(x1, x2, v);
 
-  return NOISE_LERP(y1, y2, w) * 0.7071f; /* normalize -1 to 1 */
+  return NOISE_LERP(y1, y2, w) * 0.70710678f; /* normalize -1 to 1 */
 }
 
 NOISE_API NOISE_INLINE float noise_perlin_2_fbm(float x, float y, float frequency, int octaves, float lacunarity, float gain)
@@ -317,11 +304,6 @@ NOISE_API NOISE_INLINE float noise_simplex_2(float x, float y, float frequency)
   int i1, j1;
   int idx;
 
-  if (!noise_initialized)
-  {
-    noise_seed(0xDEADBEEFu);
-  }
-
   x *= frequency;
   y *= frequency;
 
@@ -420,11 +402,6 @@ NOISE_API NOISE_INLINE float noise_simplex_3(float x, float y, float z, float fr
   int ii, jj, kk;
   int gi0, gi1, gi2, gi3;
   int idx;
-
-  if (!noise_initialized)
-  {
-    noise_seed(0xDEADBEEFu);
-  }
 
   x *= frequency;
   y *= frequency;

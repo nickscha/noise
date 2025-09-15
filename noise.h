@@ -149,14 +149,10 @@ NOISE_API NOISE_INLINE float noise_perlin_2(float x, float y, float frequency)
   u = NOISE_FADE(xf);
   v = NOISE_FADE(yf);
 
-  {
-    int px = noise_permutations[X];
-    int px1 = noise_permutations[X + 1];
-    aa = noise_permutations[px + Y];
-    ab = noise_permutations[px + Y + 1];
-    ba = noise_permutations[px1 + Y];
-    bb = noise_permutations[px1 + Y + 1];
-  }
+  aa = noise_permutations[noise_permutations[X] + Y];
+  ab = noise_permutations[noise_permutations[X] + Y + 1];
+  ba = noise_permutations[noise_permutations[X + 1] + Y];
+  bb = noise_permutations[noise_permutations[X + 1] + Y + 1];
 
   x1 = NOISE_LERP(NOISE_DOT_2(noise_gradient_2_lut[aa & 7], xf, yf),
                   NOISE_DOT_2(noise_gradient_2_lut[ba & 7], xf - 1, yf), u);
@@ -190,19 +186,14 @@ NOISE_API NOISE_INLINE float noise_perlin_3(float x, float y, float z, float fre
   v = NOISE_FADE(yf);
   w = NOISE_FADE(zf);
 
-  {
-    int px = noise_permutations[X];
-    int px1 = noise_permutations[X + 1];
-
-    aaa = noise_permutations[noise_permutations[px + Y] + Z];
-    aba = noise_permutations[noise_permutations[px + Y + 1] + Z];
-    aab = noise_permutations[noise_permutations[px + Y] + Z + 1];
-    abb = noise_permutations[noise_permutations[px + Y + 1] + Z + 1];
-    baa = noise_permutations[noise_permutations[px1 + Y] + Z];
-    bba = noise_permutations[noise_permutations[px1 + Y + 1] + Z];
-    bab = noise_permutations[noise_permutations[px1 + Y] + Z + 1];
-    bbb = noise_permutations[noise_permutations[px1 + Y + 1] + Z + 1];
-  }
+  aaa = noise_permutations[noise_permutations[noise_permutations[X] + Y] + Z];
+  aba = noise_permutations[noise_permutations[noise_permutations[X] + Y + 1] + Z];
+  aab = noise_permutations[noise_permutations[noise_permutations[X] + Y] + Z + 1];
+  abb = noise_permutations[noise_permutations[noise_permutations[X] + Y + 1] + Z + 1];
+  baa = noise_permutations[noise_permutations[noise_permutations[X + 1] + Y] + Z];
+  bba = noise_permutations[noise_permutations[noise_permutations[X + 1] + Y + 1] + Z];
+  bab = noise_permutations[noise_permutations[noise_permutations[X + 1] + Y] + Z + 1];
+  bbb = noise_permutations[noise_permutations[noise_permutations[X + 1] + Y + 1] + Z + 1];
 
   x1 = NOISE_LERP(NOISE_DOT_3(noise_gradient_3_lut[aaa & 15], xf, yf, zf),
                   NOISE_DOT_3(noise_gradient_3_lut[baa & 15], xf - 1, yf, zf), u);

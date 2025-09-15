@@ -1,6 +1,12 @@
 # noise
 A C89 standard compliant, single header, nostdlib (no C Standard Library) Noise Generation (NOISE).
 
+<p align="center">
+<a href="https://github.com/nickscha/noise"><img src="assets/noise.png"></a>
+</p>
+
+Different noise functions sampled on 512x512 grid with frequency 0.010f.
+
 For more information please look at the "noise.h" file or take a look at the "examples" or "tests" folder.
 
 > [!WARNING]

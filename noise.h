@@ -28,12 +28,6 @@ LICENSE
 
 #define NOISE_API static
 
-#define NOISE_FLOOR(x) ((float)((int)(x)) - (((x) < (float)((int)(x))) ? 1.0f : 0.0f))
-#define NOISE_FADE(t) ((t) * (t) * (t) * ((t) * ((t) * 6.0f - 15.0f) + 10.0f))
-#define NOISE_LERP(a, b, t) ((a) + (t) * ((b) - (a)))
-#define NOISE_DOT_2(g, x, y) ((g)[0] * (x) + (g)[1] * (y))
-#define NOISE_DOT_3(g, x, y, z) ((g)[0] * (x) + (g)[1] * (y) + (g)[2] * (z))
-
 static unsigned char noise_permutations[512];
 static unsigned int noise_lcg_state;
 static float noise_gradient_2_lut[8][2] = {{1, 1}, {-1, 1}, {1, -1}, {-1, -1}, {1, 0}, {-1, 0}, {0, 1}, {0, -1}};
@@ -84,9 +78,29 @@ NOISE_API NOISE_INLINE float noise_floor(float x)
   return (x < 0.0f && (float)i != x) ? (float)(i - 1) : (float)i;
 }
 
+NOISE_API NOISE_INLINE float noise_lerp(float a, float b, float t)
+{
+  return a + t * (b - a);
+}
+
+NOISE_API NOISE_INLINE float noise_fade(float t)
+{
+  return t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f);
+}
+
 NOISE_API NOISE_INLINE float noise_fract(float x)
 {
   return x - noise_floor(x);
+}
+
+NOISE_API NOISE_INLINE float noise_dot2(const float g[2], float x, float y)
+{
+  return g[0] * x + g[1] * y;
+}
+
+NOISE_API NOISE_INLINE float noise_dot3(const float g[3], float x, float y, float z)
+{
+  return g[0] * x + g[1] * y + g[2] * z;
 }
 
 NOISE_API NOISE_INLINE float noise_hash(float n)
@@ -134,25 +148,25 @@ NOISE_API NOISE_INLINE float noise_perlin_2(float x, float y, float frequency)
 
   x *= frequency;
   y *= frequency;
-  X = (int)NOISE_FLOOR(x) & 255;
-  Y = (int)NOISE_FLOOR(y) & 255;
-  xf = x - NOISE_FLOOR(x);
-  yf = y - NOISE_FLOOR(y);
-  u = NOISE_FADE(xf);
-  v = NOISE_FADE(yf);
+  X = (int)noise_floor(x) & 255;
+  Y = (int)noise_floor(y) & 255;
+  xf = x - noise_floor(x);
+  yf = y - noise_floor(y);
+  u = noise_fade(xf);
+  v = noise_fade(yf);
 
   aa = noise_permutations[noise_permutations[X] + Y];
   ab = noise_permutations[noise_permutations[X] + Y + 1];
   ba = noise_permutations[noise_permutations[X + 1] + Y];
   bb = noise_permutations[noise_permutations[X + 1] + Y + 1];
 
-  x1 = NOISE_LERP(NOISE_DOT_2(noise_gradient_2_lut[aa & 7], xf, yf),
-                  NOISE_DOT_2(noise_gradient_2_lut[ba & 7], xf - 1, yf), u);
-  x2 = NOISE_LERP(NOISE_DOT_2(noise_gradient_2_lut[ab & 7], xf, yf - 1),
-                  NOISE_DOT_2(noise_gradient_2_lut[bb & 7], xf - 1, yf - 1), u);
-  y1 = NOISE_LERP(x1, x2, v);
+  x1 = noise_lerp(noise_dot2(noise_gradient_2_lut[aa & 7], xf, yf),
+                  noise_dot2(noise_gradient_2_lut[ba & 7], xf - 1, yf), u);
+  x2 = noise_lerp(noise_dot2(noise_gradient_2_lut[ab & 7], xf, yf - 1),
+                  noise_dot2(noise_gradient_2_lut[bb & 7], xf - 1, yf - 1), u);
+  y1 = noise_lerp(x1, x2, v);
 
-   return y1 * 0.70710678f; /* normalize -1 to 1 */
+  return y1 * 0.70710678f; /* normalize -1 to 1 */
 }
 
 NOISE_API NOISE_INLINE float noise_perlin_3(float x, float y, float z, float freq)
@@ -163,15 +177,15 @@ NOISE_API NOISE_INLINE float noise_perlin_3(float x, float y, float z, float fre
   x *= freq;
   y *= freq;
   z *= freq;
-  X = (int)NOISE_FLOOR(x) & 255;
-  Y = (int)NOISE_FLOOR(y) & 255;
-  Z = (int)NOISE_FLOOR(z) & 255;
-  xf = x - NOISE_FLOOR(x);
-  yf = y - NOISE_FLOOR(y);
-  zf = z - NOISE_FLOOR(z);
-  u = NOISE_FADE(xf);
-  v = NOISE_FADE(yf);
-  w = NOISE_FADE(zf);
+  X = (int)noise_floor(x) & 255;
+  Y = (int)noise_floor(y) & 255;
+  Z = (int)noise_floor(z) & 255;
+  xf = x - noise_floor(x);
+  yf = y - noise_floor(y);
+  zf = z - noise_floor(z);
+  u = noise_fade(xf);
+  v = noise_fade(yf);
+  w = noise_fade(zf);
 
   aaa = noise_permutations[noise_permutations[noise_permutations[X] + Y] + Z];
   aba = noise_permutations[noise_permutations[noise_permutations[X] + Y + 1] + Z];
@@ -182,19 +196,19 @@ NOISE_API NOISE_INLINE float noise_perlin_3(float x, float y, float z, float fre
   bab = noise_permutations[noise_permutations[noise_permutations[X + 1] + Y] + Z + 1];
   bbb = noise_permutations[noise_permutations[noise_permutations[X + 1] + Y + 1] + Z + 1];
 
-  x1 = NOISE_LERP(NOISE_DOT_3(noise_gradient_3_lut[aaa & 15], xf, yf, zf),
-                  NOISE_DOT_3(noise_gradient_3_lut[baa & 15], xf - 1, yf, zf), u);
-  x2 = NOISE_LERP(NOISE_DOT_3(noise_gradient_3_lut[aba & 15], xf, yf - 1, zf),
-                  NOISE_DOT_3(noise_gradient_3_lut[bba & 15], xf - 1, yf - 1, zf), u);
-  y1 = NOISE_LERP(x1, x2, v);
+  x1 = noise_lerp(noise_dot3(noise_gradient_3_lut[aaa & 15], xf, yf, zf),
+                  noise_dot3(noise_gradient_3_lut[baa & 15], xf - 1, yf, zf), u);
+  x2 = noise_lerp(noise_dot3(noise_gradient_3_lut[aba & 15], xf, yf - 1, zf),
+                  noise_dot3(noise_gradient_3_lut[bba & 15], xf - 1, yf - 1, zf), u);
+  y1 = noise_lerp(x1, x2, v);
 
-  x1 = NOISE_LERP(NOISE_DOT_3(noise_gradient_3_lut[aab & 15], xf, yf, zf - 1),
-                  NOISE_DOT_3(noise_gradient_3_lut[bab & 15], xf - 1, yf, zf - 1), u);
-  x2 = NOISE_LERP(NOISE_DOT_3(noise_gradient_3_lut[abb & 15], xf, yf - 1, zf - 1),
-                  NOISE_DOT_3(noise_gradient_3_lut[bbb & 15], xf - 1, yf - 1, zf - 1), u);
-  y2 = NOISE_LERP(x1, x2, v);
+  x1 = noise_lerp(noise_dot3(noise_gradient_3_lut[aab & 15], xf, yf, zf - 1),
+                  noise_dot3(noise_gradient_3_lut[bab & 15], xf - 1, yf, zf - 1), u);
+  x2 = noise_lerp(noise_dot3(noise_gradient_3_lut[abb & 15], xf, yf - 1, zf - 1),
+                  noise_dot3(noise_gradient_3_lut[bbb & 15], xf - 1, yf - 1, zf - 1), u);
+  y2 = noise_lerp(x1, x2, v);
 
-  return NOISE_LERP(y1, y2, w) * 0.70710678f; /* normalize -1 to 1 */
+  return noise_lerp(y1, y2, w) * 0.70710678f; /* normalize -1 to 1 */
 }
 
 NOISE_API NOISE_INLINE float noise_perlin_2_fbm(float x, float y, float frequency, int octaves, float lacunarity, float gain)
@@ -311,8 +325,8 @@ NOISE_API NOISE_INLINE float noise_simplex_2(float x, float y, float frequency)
   s = (x + y) * NOISE_SIMPLEX_F2;
   xs = x + s;
   ys = y + s;
-  i = (int)NOISE_FLOOR(xs);
-  j = (int)NOISE_FLOOR(ys);
+  i = (int)noise_floor(xs);
+  j = (int)noise_floor(ys);
 
   t = (float)(i + j) * NOISE_SIMPLEX_G2;
   x0 = x - (float)i + t; /* unskew the cell origin back to (x,y) space */
@@ -357,7 +371,7 @@ NOISE_API NOISE_INLINE float noise_simplex_2(float x, float y, float frequency)
   else
   {
     t0 = t0 * t0;
-    n0 = t0 * t0 * NOISE_DOT_2(noise_gradient_2_lut[gi0], x0, y0);
+    n0 = t0 * t0 * noise_dot2(noise_gradient_2_lut[gi0], x0, y0);
   }
 
   t1 = 0.5f - x1 * x1 - y1 * y1;
@@ -369,7 +383,7 @@ NOISE_API NOISE_INLINE float noise_simplex_2(float x, float y, float frequency)
   else
   {
     t1 = t1 * t1;
-    n1 = t1 * t1 * NOISE_DOT_2(noise_gradient_2_lut[gi1], x1, y1);
+    n1 = t1 * t1 * noise_dot2(noise_gradient_2_lut[gi1], x1, y1);
   }
 
   t2 = 0.5f - x2 * x2 - y2 * y2;
@@ -381,7 +395,7 @@ NOISE_API NOISE_INLINE float noise_simplex_2(float x, float y, float frequency)
   else
   {
     t2 = t2 * t2;
-    n2 = t2 * t2 * NOISE_DOT_2(noise_gradient_2_lut[gi2], x2, y2);
+    n2 = t2 * t2 * noise_dot2(noise_gradient_2_lut[gi2], x2, y2);
   }
 
   /* Add contributions and scale the result to cover approx [-1,1] */
@@ -412,9 +426,9 @@ NOISE_API NOISE_INLINE float noise_simplex_3(float x, float y, float z, float fr
   xs = x + s;
   ys = y + s;
   zs = z + s;
-  i = (int)NOISE_FLOOR(xs);
-  j = (int)NOISE_FLOOR(ys);
-  k = (int)NOISE_FLOOR(zs);
+  i = (int)noise_floor(xs);
+  j = (int)noise_floor(ys);
+  k = (int)noise_floor(zs);
 
   t = (float)(i + j + k) * NOISE_SIMPLEX_G3;
   x0 = x - (float)i + t;
@@ -524,7 +538,7 @@ NOISE_API NOISE_INLINE float noise_simplex_3(float x, float y, float z, float fr
   else
   {
     t0 = t0 * t0;
-    n0 = t0 * t0 * NOISE_DOT_3(noise_gradient_3_lut[gi0], x0, y0, z0);
+    n0 = t0 * t0 * noise_dot3(noise_gradient_3_lut[gi0], x0, y0, z0);
   }
 
   t1 = 0.6f - x1 * x1 - y1 * y1 - z1 * z1;
@@ -536,7 +550,7 @@ NOISE_API NOISE_INLINE float noise_simplex_3(float x, float y, float z, float fr
   else
   {
     t1 = t1 * t1;
-    n1 = t1 * t1 * NOISE_DOT_3(noise_gradient_3_lut[gi1], x1, y1, z1);
+    n1 = t1 * t1 * noise_dot3(noise_gradient_3_lut[gi1], x1, y1, z1);
   }
 
   t2 = 0.6f - x2 * x2 - y2 * y2 - z2 * z2;
@@ -548,7 +562,7 @@ NOISE_API NOISE_INLINE float noise_simplex_3(float x, float y, float z, float fr
   else
   {
     t2 = t2 * t2;
-    n2 = t2 * t2 * NOISE_DOT_3(noise_gradient_3_lut[gi2], x2, y2, z2);
+    n2 = t2 * t2 * noise_dot3(noise_gradient_3_lut[gi2], x2, y2, z2);
   }
 
   t3 = 0.6f - x3 * x3 - y3 * y3 - z3 * z3;
@@ -560,7 +574,7 @@ NOISE_API NOISE_INLINE float noise_simplex_3(float x, float y, float z, float fr
   else
   {
     t3 = t3 * t3;
-    n3 = t3 * t3 * NOISE_DOT_3(noise_gradient_3_lut[gi3], x3, y3, z3);
+    n3 = t3 * t3 * noise_dot3(noise_gradient_3_lut[gi3], x3, y3, z3);
   }
 
   /* Sum up and scale to cover the range roughly [-1,1] */

@@ -12,10 +12,6 @@ LICENSE
 */
 #include "../noise.h"     /* Noise Generation */
 #include "../deps/test.h" /* Simple Testing framework    */
-#define PERF_DISABLE
-#define PERF_STATS_ENABLE               /* Collect profiling statistics */
-#define PERF_DISBALE_INTERMEDIATE_PRINT /* Disable printing each profile invocation */
-#include "../deps/perf.h"               /* Simple Performance profiler */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -134,7 +130,6 @@ void noise_test_run(char *filename, test_noise_function function)
 {
   int x, y;
 
-  PERF_PROFILE_WITH_NAME({
   for (y = 0; y < HEIGHT; ++y)
   {
     for (x = 0; x < WIDTH; ++x)
@@ -142,7 +137,7 @@ void noise_test_run(char *filename, test_noise_function function)
       float n = function(x, y);
       heightmap[y * WIDTH + x] = n;
     }
-  } }, filename);
+  }
 
   noise_normalize_heightmap();
   noise_export_ppm(filename, heightmap, WIDTH, HEIGHT);
@@ -203,7 +198,7 @@ float noise_simplex_2_domain_warp_stub(int x, int y)
 
 float noise_simplex_2_domain_warp_fbm_stub(int x, int y)
 {
-  return noise_simplex_2_domain_warp_fbm((float)x, (float)y, 0.010f, 3, 2.0f, 0.5f, -20.0f);
+  return noise_simplex_2_domain_warp_fbm((float)x, (float)y, 0.010f, 4, 2.0f, 0.5f, -20.0f);
 }
 
 float noise_simplex_2_domain_warp_fbm_rotation_stub(int x, int y)
@@ -250,39 +245,6 @@ float noise_value_2_terrain_stub(int x, int y)
   return e;
 }
 
-void noise_test_profile(void)
-{
-  int x, y;
-
-  float m2[2][2] = {
-      {0.80f, -0.60f},
-      {0.60f, 0.80f}};
-
-  for (y = 0; y < HEIGHT; ++y)
-  {
-    for (x = 0; x < WIDTH; ++x)
-    {
-      /* Perlin Noise */
-      PERF_PROFILE_WITH_NAME({ float n = noise_perlin_2_fbm((float)x, (float)y, 0.010f, 4, 2.0f, 0.5f); (void) n; }, "perlin_2_fbm_4_octaves");
-      PERF_PROFILE_WITH_NAME({ float n = noise_perlin_2_fbm((float)x, (float)y, 0.010f, 8, 2.0f, 0.5f); (void) n; }, "perlin_2_fbm_8_octaves");
-      PERF_PROFILE_WITH_NAME({ float n = noise_perlin_2_fbm_rotation((float)x, (float)y, 0.010f, 4, 2.0f, 0.5f, m2); (void) n; }, "perlin_2_fbm_rotation_4_octaves");
-      PERF_PROFILE_WITH_NAME({ float n = noise_perlin_2_fbm_rotation((float)x, (float)y, 0.010f, 8, 2.0f, 0.5f, m2); (void) n; }, "perlin_2_fbm_rotation_8_octaves");
-
-      /* Simplex Noise */
-      PERF_PROFILE_WITH_NAME({ float n = noise_simplex_2_fbm((float)x, (float)y, 0.010f, 4, 2.0f, 0.5f); (void) n; }, "simplex_2_fbm_4_octaves");
-      PERF_PROFILE_WITH_NAME({ float n = noise_simplex_2_fbm((float)x, (float)y, 0.010f, 8, 2.0f, 0.5f); (void) n; }, "simplex_2_fbm_8_octaves");
-      PERF_PROFILE_WITH_NAME({ float n = noise_simplex_2_fbm_rotation((float)x, (float)y, 0.010f, 4, 2.0f, 0.5f, m2); (void) n; }, "simplex_2_fbm_rotation_4_octaves");
-      PERF_PROFILE_WITH_NAME({ float n = noise_simplex_2_fbm_rotation((float)x, (float)y, 0.010f, 8, 2.0f, 0.5f, m2); (void) n; }, "simplex_2_fbm_rotation_8_octaves");
-
-      /* Value Noise */
-      PERF_PROFILE_WITH_NAME({ float n = noise_value_2_fbm((float)x, (float)y, 0.010f, 4, 2.0f, 0.5f); (void) n; }, "value_2_fbm_4_octaves");
-      PERF_PROFILE_WITH_NAME({ float n = noise_value_2_fbm((float)x, (float)y, 0.010f, 8, 2.0f, 0.5f); (void) n; }, "value_2_fbm_8_octaves");
-      PERF_PROFILE_WITH_NAME({ float n = noise_value_2_fbm_rotation((float)x, (float)y, 0.010f, 4, 2.0f, 0.5f, m2); (void) n; }, "value_2_fbm_rotation_4_octaves");
-      PERF_PROFILE_WITH_NAME({ float n = noise_value_2_fbm_rotation((float)x, (float)y, 0.010f, 8, 2.0f, 0.5f, m2); (void) n; }, "value_2_fbm_rotation_8_octaves");
-    }
-  }
-}
-
 int main(void)
 {
   /* Setup the PRNG seeding */
@@ -308,10 +270,6 @@ int main(void)
   noise_test_run("value_2_fbm.ppm", noise_value_2_fbm_stub);
   noise_test_run("value_2_fbm_rotation.ppm", noise_value_2_fbm_rotation_stub);
   noise_test_run("value_2_terrain.ppm", noise_value_2_terrain_stub);
-
-  /* Print collected performance profiling metrics */
-  noise_test_profile();
-  perf_print_stats();
 
   if (img)
   {

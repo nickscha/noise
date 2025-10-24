@@ -10,8 +10,8 @@ LICENSE
   See end of file for detailed license information.
 
 */
-#include "../noise.h"                   /* Noise Generation */
-#include "../deps/test.h"               /* Simple Testing framework    */
+#include "../noise.h"     /* Noise Generation */
+#include "../deps/test.h" /* Simple Testing framework    */
 #define PERF_DISABLE
 #define PERF_STATS_ENABLE               /* Collect profiling statistics */
 #define PERF_DISBALE_INTERMEDIATE_PRINT /* Disable printing each profile invocation */
@@ -196,6 +196,25 @@ float noise_simplex_2_fbm_rotation_stub(int x, int y)
   return noise_simplex_2_fbm_rotation((float)x, (float)y, 0.010f, 9, 1.9f, 0.55f, m2);
 }
 
+float noise_simplex_2_domain_warp_stub(int x, int y)
+{
+  return noise_simplex_2_domain_warp((float)x, (float)y, 0.010f, 5.0f);
+}
+
+float noise_simplex_2_domain_warp_fbm_stub(int x, int y)
+{
+  return noise_simplex_2_domain_warp_fbm((float)x, (float)y, 0.010f, 3, 2.0f, 0.5f, -20.0f);
+}
+
+float noise_simplex_2_domain_warp_fbm_rotation_stub(int x, int y)
+{
+  float m2[2][2] = {
+      {0.80f, -0.60f},
+      {0.60f, 0.80f}};
+
+  return noise_simplex_2_domain_warp_fbm_rotation((float)x, (float)y, 0.010f, 3, 2.0f, 0.5f, -20.0f, m2);
+}
+
 float noise_value_2_stub(int x, int y)
 {
   return noise_value_2((float)x, (float)y, 0.010f);
@@ -280,6 +299,9 @@ int main(void)
   noise_test_run("simplex_2.ppm", noise_simplex_2_stub);
   noise_test_run("simplex_2_fbm.ppm", noise_simplex_2_fbm_stub);
   noise_test_run("simplex_2_fbm_rotation.ppm", noise_simplex_2_fbm_rotation_stub);
+  noise_test_run("simplex_2_domain_warp.ppm", noise_simplex_2_domain_warp_stub);
+  noise_test_run("simplex_2_domain_warp_fbm.ppm", noise_simplex_2_domain_warp_fbm_stub);
+  noise_test_run("simplex_2_domain_warp_fbm_rotation.ppm", noise_simplex_2_domain_warp_fbm_rotation_stub);
 
   /* Value Noise */
   noise_test_run("value_2.ppm", noise_value_2_stub);

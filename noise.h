@@ -702,6 +702,47 @@ NOISE_API NOISE_INLINE float noise_simplex_3_fbm_rotation(
   return sum / norm;
 }
 
+NOISE_API NOISE_INLINE float noise_simplex_2_domain_warp(
+    float x, float y,
+    float frequency,
+    float amplitude)
+{
+  float wx = noise_simplex_2(x + 5.2f, y + 1.3f, frequency) * amplitude;
+  float wy = noise_simplex_2(x + 8.5f, y + 2.8f, frequency) * amplitude;
+
+  return noise_simplex_2(x + wx, y + wy, frequency);
+}
+
+NOISE_API NOISE_INLINE float noise_simplex_2_domain_warp_fbm(
+    float x, float y,
+    float frequency,
+    int octaves,
+    float lacunarity,
+    float gain,
+    float amplitude)
+{
+  float warp_x = noise_simplex_2_fbm(x + 5.2f, y + 1.3f, frequency, octaves, lacunarity, gain) * amplitude;
+  float warp_y = noise_simplex_2_fbm(x + 8.5f, y + 2.8f, frequency, octaves, lacunarity, gain) * amplitude;
+
+  return noise_simplex_2_fbm(x + warp_x, y + warp_y, frequency, octaves, lacunarity, gain);
+}
+
+NOISE_API NOISE_INLINE float noise_simplex_2_domain_warp_fbm_rotation(
+    float x, float y,
+    float frequency,
+    int octaves,
+    float lacunarity,
+    float gain,
+    float amplitude,
+    float rotation[2][2])
+{
+  float warp_x = noise_simplex_2_fbm_rotation(x + 5.2f, y + 1.3f, frequency, octaves, lacunarity, gain, rotation) * amplitude;
+  float warp_y = noise_simplex_2_fbm_rotation(x + 8.5f, y + 2.8f, frequency, octaves, lacunarity, gain, rotation) * amplitude;
+
+  return noise_simplex_2_fbm_rotation(x + warp_x, y + warp_y, frequency, octaves, lacunarity, gain, rotation);
+}
+
+
 /* #############################################################################
  * # Value Noise functions
  * #############################################################################

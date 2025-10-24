@@ -145,13 +145,18 @@ NOISE_API NOISE_INLINE float noise_perlin_2(float x, float y, float frequency)
 {
   int X, Y, aa, ab, ba, bb;
   float xf, yf, u, v, x1, x2, y1;
+  float floor_x, floor_y;
 
   x *= frequency;
   y *= frequency;
-  X = (int)noise_floor(x) & 255;
-  Y = (int)noise_floor(y) & 255;
-  xf = x - noise_floor(x);
-  yf = y - noise_floor(y);
+
+  floor_x = noise_floor(x);
+  floor_y = noise_floor(y);
+
+  X = (int)floor_x & 255;
+  Y = (int)floor_y & 255;
+  xf = x - floor_x;
+  yf = y - floor_y;
   u = noise_fade(xf);
   v = noise_fade(yf);
 
@@ -173,16 +178,22 @@ NOISE_API NOISE_INLINE float noise_perlin_3(float x, float y, float z, float fre
 {
   int X, Y, Z, aaa, aba, aab, abb, baa, bba, bab, bbb;
   float xf, yf, zf, u, v, w, x1, x2, y1, y2;
+  float floor_x, floor_y, floor_z;
 
   x *= freq;
   y *= freq;
   z *= freq;
-  X = (int)noise_floor(x) & 255;
-  Y = (int)noise_floor(y) & 255;
-  Z = (int)noise_floor(z) & 255;
-  xf = x - noise_floor(x);
-  yf = y - noise_floor(y);
-  zf = z - noise_floor(z);
+
+  floor_x = noise_floor(x);
+  floor_y = noise_floor(y);
+  floor_z = noise_floor(z);
+
+  X = (int)floor_x & 255;
+  Y = (int)floor_y & 255;
+  Z = (int)floor_z & 255;
+  xf = x - floor_x;
+  yf = y - floor_y;
+  zf = z - floor_z;
   u = noise_fade(xf);
   v = noise_fade(yf);
   w = noise_fade(zf);

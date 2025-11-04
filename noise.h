@@ -143,6 +143,7 @@ NOISE_API NOISE_INLINE void noise_seed(unsigned int seed)
  */
 NOISE_API NOISE_INLINE float noise_perlin_2(float x, float y, float frequency)
 {
+  unsigned char *perm = noise_permutations;
   int X, Y, aa, ab, ba, bb;
   float xf, yf, u, v, x1, x2, y1;
   float floor_x, floor_y;
@@ -160,10 +161,10 @@ NOISE_API NOISE_INLINE float noise_perlin_2(float x, float y, float frequency)
   u = noise_fade(xf);
   v = noise_fade(yf);
 
-  aa = noise_permutations[noise_permutations[X] + Y];
-  ab = noise_permutations[noise_permutations[X] + Y + 1];
-  ba = noise_permutations[noise_permutations[X + 1] + Y];
-  bb = noise_permutations[noise_permutations[X + 1] + Y + 1];
+  aa = perm[perm[X] + Y];
+  ab = perm[perm[X] + Y + 1];
+  ba = perm[perm[X + 1] + Y];
+  bb = perm[perm[X + 1] + Y + 1];
 
   x1 = noise_lerp(noise_dot2(noise_gradient_2_lut[aa & 7], xf, yf),
                   noise_dot2(noise_gradient_2_lut[ba & 7], xf - 1, yf), u);
@@ -176,6 +177,7 @@ NOISE_API NOISE_INLINE float noise_perlin_2(float x, float y, float frequency)
 
 NOISE_API NOISE_INLINE float noise_perlin_3(float x, float y, float z, float freq)
 {
+  unsigned char *perm = noise_permutations;
   int X, Y, Z, aaa, aba, aab, abb, baa, bba, bab, bbb;
   float xf, yf, zf, u, v, w, x1, x2, y1, y2;
   float floor_x, floor_y, floor_z;
@@ -198,14 +200,14 @@ NOISE_API NOISE_INLINE float noise_perlin_3(float x, float y, float z, float fre
   v = noise_fade(yf);
   w = noise_fade(zf);
 
-  aaa = noise_permutations[noise_permutations[noise_permutations[X] + Y] + Z];
-  aba = noise_permutations[noise_permutations[noise_permutations[X] + Y + 1] + Z];
-  aab = noise_permutations[noise_permutations[noise_permutations[X] + Y] + Z + 1];
-  abb = noise_permutations[noise_permutations[noise_permutations[X] + Y + 1] + Z + 1];
-  baa = noise_permutations[noise_permutations[noise_permutations[X + 1] + Y] + Z];
-  bba = noise_permutations[noise_permutations[noise_permutations[X + 1] + Y + 1] + Z];
-  bab = noise_permutations[noise_permutations[noise_permutations[X + 1] + Y] + Z + 1];
-  bbb = noise_permutations[noise_permutations[noise_permutations[X + 1] + Y + 1] + Z + 1];
+  aaa = perm[perm[perm[X] + Y] + Z];
+  aba = perm[perm[perm[X] + Y + 1] + Z];
+  aab = perm[perm[perm[X] + Y] + Z + 1];
+  abb = perm[perm[perm[X] + Y + 1] + Z + 1];
+  baa = perm[perm[perm[X + 1] + Y] + Z];
+  bba = perm[perm[perm[X + 1] + Y + 1] + Z];
+  bab = perm[perm[perm[X + 1] + Y] + Z + 1];
+  bbb = perm[perm[perm[X + 1] + Y + 1] + Z + 1];
 
   x1 = noise_lerp(noise_dot3(noise_gradient_3_lut[aaa & 15], xf, yf, zf),
                   noise_dot3(noise_gradient_3_lut[baa & 15], xf - 1, yf, zf), u);
@@ -742,7 +744,6 @@ NOISE_API NOISE_INLINE float noise_simplex_2_domain_warp_fbm_rotation(
   return noise_simplex_2_fbm_rotation(x + warp_x, y + warp_y, frequency, octaves, lacunarity, gain, rotation);
 }
 
-
 /* #############################################################################
  * # Value Noise functions
  * #############################################################################
@@ -834,18 +835,18 @@ NOISE_API NOISE_INLINE float noise_value_2_fbm_rotation(float x, float y, float 
 #endif /* NOISE_H */
 
 /*
-   ------------------------------------------------------------------------------
+   -----------------------------------------------------------------------------
    This software is available under 2 licenses -- choose whichever you prefer.
    ------------------------------------------------------------------------------
    ALTERNATIVE A - MIT License
    Copyright (c) 2025 nickscha
-   noise_permutationsission is hereby granted, free of charge, to any person obtaining a copy of
+   Permission is hereby granted, free of charge, to any person obtaining a copy of
    this software and associated documentation files (the "Software"), to deal in
    the Software without restriction, including without limitation the rights to
    use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-   of the Software, and to noise_permutationsit persons to whom the Software is furnished to do
+   of the Software, and to permit persons to whom the Software is furnished to do
    so, subject to the following conditions:
-   The above copyright notice and this noise_permutationsission notice shall be included in all
+   The above copyright notice and this permission notice shall be included in all
    copies or substantial portions of the Software.
    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
    IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,

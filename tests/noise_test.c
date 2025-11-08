@@ -245,6 +245,30 @@ float noise_value_2_terrain_stub(int x, int y)
   return e;
 }
 
+void noise_test_erosion(void)
+{
+  int x, y;
+
+  noise_seed(1234);
+
+  /* Generate base terrain */
+  for (y = 0; y < HEIGHT; ++y)
+  {
+    for (x = 0; x < WIDTH; ++x)
+    {
+      heightmap[y * WIDTH + x] = noise_simplex_2_fbm((float)x * 0.01f, (float)y * 0.01f, 1.0f, 5, 2.0f, 0.5f);
+    }
+  }
+
+  /* Apply erosions */
+  noise_erosion_thermal(heightmap, WIDTH, HEIGHT, 0.02f, 20);
+  noise_erosion_hydraulic(heightmap, WIDTH, HEIGHT, 20, 0.05f, 0.1f, 0.05f, 0.4f, 0.2f);
+  noise_erosion_wind(heightmap, WIDTH, HEIGHT, 1.0f, 0.5f, 0.02f, 10);
+
+  noise_normalize_heightmap();
+  noise_export_ppm("erosion.ppm", heightmap, WIDTH, HEIGHT);
+}
+
 int main(void)
 {
   /* Setup the PRNG seeding */
@@ -270,6 +294,9 @@ int main(void)
   noise_test_run("value_2_fbm.ppm", noise_value_2_fbm_stub);
   noise_test_run("value_2_fbm_rotation.ppm", noise_value_2_fbm_rotation_stub);
   noise_test_run("value_2_terrain.ppm", noise_value_2_terrain_stub);
+
+  /* Erosion simulation */
+  noise_test_erosion();
 
   if (img)
   {

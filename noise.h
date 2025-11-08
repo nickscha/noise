@@ -832,6 +832,164 @@ NOISE_API NOISE_INLINE float noise_value_2_fbm_rotation(float x, float y, float 
   return sum / norm;
 }
 
+/* #############################################################################
+ * # Erosion simulation functions
+ * #############################################################################
+ */
+
+NOISE_API void noise_erosion_thermal(float *heightmap, int width, int height, float talus, int iterations)
+{
+  int iter, x, y, i;
+  const int dx[8] = {-1, 0, 1, -1, 1, -1, 0, 1};
+  const int dy[8] = {-1, -1, -1, 0, 0, 1, 1, 1};
+
+  for (iter = 0; iter < iterations; ++iter)
+  {
+    for (y = 1; y < height - 1; ++y)
+    {
+      for (x = 1; x < width - 1; ++x)
+      {
+        float h = heightmap[y * width + x];
+        float dmax = 0.0f;
+        int imax = -1;
+
+        /* find steepest neighbor */
+        for (i = 0; i < 8; ++i)
+        {
+          float n = heightmap[(y + dy[i]) * width + (x + dx[i])];
+          float diff = h - n;
+          if (diff > dmax)
+          {
+            dmax = diff;
+            imax = i;
+          }
+        }
+
+        /* move small portion of material if slope exceeds talus */
+        if (dmax > talus && imax >= 0)
+        {
+          float dh = 0.5f * (dmax - talus);
+          heightmap[y * width + x] -= dh;
+          heightmap[(y + dy[imax]) * width + (x + dx[imax])] += dh;
+        }
+      }
+    }
+  }
+}
+
+NOISE_API void noise_erosion_hydraulic(
+    float *heightmap, int width, int height,
+    int iterations,
+    float rain_amount,
+    float evaporation,
+    float sediment_capacity,
+    float deposition_rate,
+    float erosion_rate)
+{
+  int iter, x, y, i;
+  float *water;
+  float *sediment;
+  const int dx[4] = {-1, 1, 0, 0};
+  const int dy[4] = {0, 0, -1, 1};
+
+  /* temporary arrays */
+  water = (float *)heightmap;    /* reuse or overlay memory manually if no malloc */
+  sediment = (float *)heightmap; /* same buffer reuse if needed */
+
+  for (iter = 0; iter < iterations; ++iter)
+  {
+    /* rainfall */
+    for (y = 0; y < height; ++y)
+    {
+      for (x = 0; x < width; ++x)
+      {
+        water[y * width + x] += rain_amount;
+      }
+    }
+
+    /* simulate flow and erosion */
+    for (y = 1; y < height - 1; ++y)
+    {
+      for (x = 1; x < width - 1; ++x)
+      {
+        float total_diff = 0.0f;
+        float h = heightmap[y * width + x] + water[y * width + x];
+
+        /* compute flow */
+        for (i = 0; i < 4; ++i)
+        {
+          float n = heightmap[(y + dy[i]) * width + (x + dx[i])] +
+                    water[(y + dy[i]) * width + (x + dx[i])];
+          if (h > n)
+            total_diff += h - n;
+        }
+
+        if (total_diff > 0.0f)
+        {
+          for (i = 0; i < 4; ++i)
+          {
+            float n = heightmap[(y + dy[i]) * width + (x + dx[i])] +
+                      water[(y + dy[i]) * width + (x + dx[i])];
+            if (h > n)
+            {
+              float flow = (h - n) / total_diff;
+              float carry = flow * erosion_rate;
+              heightmap[y * width + x] -= carry;
+              sediment[y * width + x] += carry;
+              heightmap[(y + dy[i]) * width + (x + dx[i])] += carry * 0.5f;
+            }
+          }
+        }
+
+        /* evaporation and deposition */
+        if (sediment[y * width + x] > sediment_capacity)
+        {
+          float deposit = (sediment[y * width + x] - sediment_capacity) * deposition_rate;
+          sediment[y * width + x] -= deposit;
+          heightmap[y * width + x] += deposit;
+        }
+
+        water[y * width + x] *= (1.0f - evaporation);
+      }
+    }
+  }
+}
+
+NOISE_API void noise_erosion_wind(
+    float *heightmap, int width, int height,
+    float dir_x, float dir_y,
+    float strength,
+    int iterations)
+{
+  int iter, x, y;
+  int sx = (dir_x > 0) ? -1 : 1;
+  int sy = (dir_y > 0) ? -1 : 1;
+
+  for (iter = 0; iter < iterations; ++iter)
+  {
+    for (y = 1; y < height - 1; ++y)
+    {
+      for (x = 1; x < width - 1; ++x)
+      {
+        float h = heightmap[y * width + x];
+        int nx = x + sx;
+        int ny = y + sy;
+        if (nx >= 0 && nx < width && ny >= 0 && ny < height)
+        {
+          float nh = heightmap[ny * width + nx];
+          float diff = h - nh;
+          if (diff > 0.0f)
+          {
+            float move = diff * strength;
+            heightmap[y * width + x] -= move;
+            heightmap[ny * width + nx] += move;
+          }
+        }
+      }
+    }
+  }
+}
+
 #endif /* NOISE_H */
 
 /*

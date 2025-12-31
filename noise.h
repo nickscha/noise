@@ -93,12 +93,12 @@ NOISE_API NOISE_INLINE float noise_fract(float x)
   return x - noise_floor(x);
 }
 
-NOISE_API NOISE_INLINE float noise_dot2(const float g[2], float x, float y)
+NOISE_API NOISE_INLINE float noise_dot2(float g[2], float x, float y)
 {
   return g[0] * x + g[1] * y;
 }
 
-NOISE_API NOISE_INLINE float noise_dot3(const float g[3], float x, float y, float z)
+NOISE_API NOISE_INLINE float noise_dot3(float g[3], float x, float y, float z)
 {
   return g[0] * x + g[1] * y + g[2] * z;
 }
@@ -840,8 +840,8 @@ NOISE_API NOISE_INLINE float noise_value_2_fbm_rotation(float x, float y, float 
 NOISE_API void noise_erosion_thermal(float *heightmap, int width, int height, float talus, int iterations)
 {
   int iter, x, y, i;
-  const int dx[8] = {-1, 0, 1, -1, 1, -1, 0, 1};
-  const int dy[8] = {-1, -1, -1, 0, 0, 1, 1, 1};
+  int dx[8] = {-1, 0, 1, -1, 1, -1, 0, 1};
+  int dy[8] = {-1, -1, -1, 0, 0, 1, 1, 1};
 
   for (iter = 0; iter < iterations; ++iter)
   {
@@ -889,8 +889,8 @@ NOISE_API void noise_erosion_hydraulic(
   int iter, x, y, i;
   float *water;
   float *sediment;
-  const int dx[4] = {-1, 1, 0, 0};
-  const int dy[4] = {0, 0, -1, 1};
+  int dx[4] = {-1, 1, 0, 0};
+  int dy[4] = {0, 0, -1, 1};
 
   /* temporary arrays */
   water = (float *)heightmap;    /* reuse or overlay memory manually if no malloc */
